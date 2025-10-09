@@ -36,19 +36,22 @@ def analyse(text):
         negative_sentiment_count = 0
 
     # Crisis escalation logic
-    if distress_score >= 25:
-        print("🚨 Alert: Consultant allocated (High distress).")
-    elif distress_score >= 15:
-        print("⚠️ Suggest counseling resources (Moderate distress).")
+    # if distress_score >= 25:
+    #     print("🚨 Alert: Consultant allocated (High distress).")
+    # elif distress_score >= 15:
+    #     print("⚠️ Suggest counseling resources (Moderate distress).")
 
-    if negative_sentiment_count == 3:
-        print("🚑 You are in a critical situation. Your chat is being sent to a consultant.")
+    # if negative_sentiment_count == 3:
+    #     print("🚑 You are in a critical situation. Your chat is being sent to a consultant.")
 
     # Display summary
     vader_label = "Positive" if compound_score >= 0.05 else ("Negative" if compound_score <= -0.05 else "Neutral")
-    print(f"\nMessage: {text}")
-    print(f"Scores → Pos: {pos_score}, Neg: {neg_score}, Compound: {compound_score:.2f}")
-    print(f"Label: {vader_label}")
-    print(f"Distress Score: {distress_score:.2f}")
-    print(f"Negative Count: {negative_sentiment_count}")
-    print("-" * 60)
+    # print(f"\nMessage: {text}")
+    # print(f"Scores → Pos: {pos_score}, Neg: {neg_score}, Compound: {compound_score:.2f}")
+    # print(f"Label: {vader_label}")
+    # print(f"Distress Score: {distress_score:.2f}")
+    # print(f"Negative Count: {negative_sentiment_count}")
+    # print("-" * 60)
+    return distress_score, compound_score,vader_label,pos_score,neg_score,negative_sentiment_count
+
+

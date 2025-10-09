@@ -113,13 +113,14 @@ def Word_Preprocessing(chat):
 
     final_tokens = preprocess_text(sample_text)
 
-    print(f"\nOriginal Text: {sample_text}")
-    print("-" * 50)
-    print(f"Final Processed Tokens (Corrected, Segmented, Lemmatized): \n{final_tokens}")
+    # print(f"\nOriginal Text: {sample_text}")
+    # print("-" * 50)
+    # print(f"Final Processed Tokens (Corrected, Segmented, Lemmatized): \n{final_tokens}")
 
 
     # Convert the list of tokens back into a single string
 
     string_text = " ".join(final_tokens)
-    print(f"String Texts: {string_text}")
-    sa.analyse(string_text)
+    # print(f"String Texts: {string_text}")
+    # sa.analyse(string_text)
+    return string_text

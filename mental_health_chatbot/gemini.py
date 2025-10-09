@@ -12,10 +12,10 @@ try:
     # Use a fast model suitable for chat
     chat = client.chats.create(model='gemini-2.5-flash')
 
-    print("🤖 Gemini Chat Session Started!")
-    print("Model: gemini-2.5-flash")
-    print("Type 'quit' or 'exit' to end the conversation.")
-    print("-" * 40)
+    # print("🤖 Gemini Chat Session Started!")
+    # print("Model: gemini-2.5-flash")
+    # print("Type 'quit' or 'exit' to end the conversation.")
+    # print("-" * 40)
 
 except APIError as e:
     print(f"❌ API Error during client initialization: {e}")
@@ -27,24 +27,26 @@ except Exception as e:
 
 
 # 2. Main Chat Loop
-def run_chat():
+def run_gemini_chat(u_input):
     """Handles the continuous user input and model response cycle."""
     chat_number = 1
     while True:
         try:
-            user_input = input(f"👤 You (chat {chat_number}): ")
+            user_input = u_input
             chat_number+=1
 
-            if user_input.lower() in ['quit', 'exit']:
-                print("-" * 40)
-                print("👋 Ending chat session. Goodbye!")
-                break
+            # if user_input.lower() in ['quit', 'exit']:
+            #     print("-" * 40)
+            #     print("👋 Ending chat session. Goodbye!")
+            #     break
 
             # Send the message. The chat object manages the history automatically.
             response = chat.send_message(user_input)
 
             # Print the model's response
-            print(f"🧠 Gemini: {response.text}")
+            # print(f"🧠 Gemini: {response.text}")
+            gemini_response = response.text
+            return gemini_response
 
         except APIError as e:
             print(f"\n❌ API Request Failed: {e}")
@@ -55,14 +57,14 @@ def run_chat():
             break
 
 
-# 3. Execute the Chat and Show History
-if 'client' in locals() and 'chat' in locals():
-    run_chat()
+# # 3. Execute the Chat and Show History
+# if 'client' in locals() and 'chat' in locals():
+#     run_chat()
 
-    # Optional: Display the final conversation history
-    print("\n" + "=" * 20 + " Conversation History " + "=" * 20)
-    for message in chat.get_history():
-        role = "User" if message.role == "user" else "Gemini"
-        text = message.parts[0].text
-        print(f"[{role}]: {text}")
-    print("=" * 62)
+#     # Optional: Display the final conversation history
+#     print("\n" + "=" * 20 + " Conversation History " + "=" * 20)
+#     for message in chat.get_history():
+#         role = "User" if message.role == "user" else "Gemini"
+#         text = message.parts[0].text
+#         print(f"[{role}]: {text}")
+#     print("=" * 62)
