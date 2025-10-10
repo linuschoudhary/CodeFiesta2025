@@ -31,11 +31,11 @@ def init_consultants_db():
     cursor.execute("SELECT COUNT(*) FROM consultants")
     if cursor.fetchone()[0] == 0:
         sample_consultants = [
-            ('Dr. Prateeksha Khichi', 'sarah.johnson@mentalhealth.com', '+1-555-0101', 'Clinical Psychology', 12, '9 AM - 5 PM'),
-            ('Dr. Sunil Choudhary', 'michael.chen@therapy.com', '+1-555-0102', 'Cognitive Behavioral Therapy', 8, '10 AM - 7 PM'),
-            ('Dr. Abhishek Shrivastav', 'priya.sharma@counseling.com', '+1-555-0103', 'Trauma Therapy', 15, '8 AM - 4 PM'),
-            ('Dr. Piyush Choudhan', 'robert.brown@psychiatry.com', '+1-555-0104', 'Psychiatry', 20, '9 AM - 6 PM'),
-            ('Ms. Dipesh Soni', 'emily.davis@support.com', '+1-555-0105', 'Crisis Counseling', 6, '24/7 On-call')
+            ('Dr. Prateeksha Khichi', 'prateeksha.khichi@mentalhealth.com', '+91 9653865162', 'Clinical Psychology', 12, '9 AM - 5 PM'),
+            ('Dr. Sunil Choudhary', 'scjat1133@gmail.com', '+91 9653866184', 'Cognitive Behavioral Therapy', 8, '10 AM - 7 PM'),
+            ('Dr. Abhishek Shrivastav', 'shrivastavabhi1221@gmail.com', '+91 7014764703', 'Trauma Therapy', 15, '8 AM - 4 PM'),
+            ('Dr. Piyush Choudhan', 'chpiyush2005@gmail.com', '+91 8000458434', 'Psychiatry', 20, '9 AM - 6 PM'),
+            ('Mr. Dipesh Soni', 'dipeshsoni055@gmail.com', '+91 9001161145', 'Crisis Counseling', 6, '24/7 On-call')
         ]
         cursor.executemany('''
             INSERT INTO consultants (name, email, phone, specialization, experience_years, availability)

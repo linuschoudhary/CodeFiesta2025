@@ -4,7 +4,13 @@ import sentimant_analysis as sa
 import gemini as gemi
 from datetime import datetime, timedelta
 import sqlite3
+from deep_translator import GoogleTranslator
+from langdetect import detect
 import consultants  # Import the consultants module
+
+
+
+
 
 # Database functions (from previous implementation)
 DB_NAME = 'saathi_chat_history.db'
@@ -146,7 +152,21 @@ def process_and_clear():
     """
     
     # 1. Get the input value *before* clearing
-    user_input = st.session_state.chat_input_key 
+    
+    user_input_original = st.session_state.chat_input_key 
+    gemini_input = user_input_original
+
+    #Translating and checking if user entererd english or not.
+    try:
+        detected_lang = detect(user_input_original)
+    except:
+        detected_lang = 'en'  # default to English if detection fails
+
+    if detected_lang == 'en':
+        user_input = user_input_original
+    else:
+        translated_text = GoogleTranslator(source='auto', target='en').translate(user_input_original)
+        user_input = translated_text
     
     if user_input.strip():
         
@@ -156,12 +176,13 @@ def process_and_clear():
         # Save user message to database
         save_message("User", user_input)
         
-        # Also add to session state for immediate display
-        st.session_state.chat_history.append({
-            "role": "User", 
-            "content": user_input, 
-            "time": timestamp
-        }) 
+        # Also add to session state for immediate display if viewing today's chat
+        if st.session_state.get('selected_date_option', 'Today') == 'Today':
+            st.session_state.chat_history.append({
+                "role": "User", 
+                "content": user_input, 
+                "time": timestamp
+            }) 
 
         # --- 3. Analysis Logic ---
         chat = wp.Word_Preprocessing(user_input)
@@ -183,26 +204,30 @@ def process_and_clear():
             st.session_state.consultant_alert = consultant_alert
         
         # --- 5. Gemini Response ---
-        gemini_chat_response = gemi.run_gemini_chat(user_input)
+        gemini_chat_response = gemi.run_gemini_chat(gemini_input)
         
         # --- 6. Store Bot Responses ---
         
         # Analysis message
         analysis_message = f"Sentiment Processed: {vader_label} (Score: {compound_score:.2f})"
         save_message("Saarthi (Analysis)", analysis_message)
-        st.session_state.chat_history.append({
-            "role": "Saarthi (Analysis)", 
-            "content": analysis_message, 
-            "time": datetime.now().strftime("%H:%M:%S")
-        })
-
+        
         # Gemini chat response
         save_message("Saarthi (Talk)", gemini_chat_response)
-        st.session_state.chat_history.append({
-            "role": "Saarthi (Talk)", 
-            "content": gemini_chat_response, 
-            "time": datetime.now().strftime("%H:%M:%S")
-        })
+        
+        # Add to current display if viewing today's chat
+        if st.session_state.get('selected_date_option', 'Today') == 'Today':
+            st.session_state.chat_history.append({
+                "role": "Saarthi (Analysis)", 
+                "content": analysis_message, 
+                "time": datetime.now().strftime("%H:%M:%S")
+            })
+            
+            st.session_state.chat_history.append({
+                "role": "Saarthi (Talk)", 
+                "content": gemini_chat_response, 
+                "time": datetime.now().strftime("%H:%M:%S")
+            })
 
     # 7. Reset the input box value in session state to clear it
     st.session_state.chat_input_key = ""
@@ -299,19 +324,21 @@ def main():
         show_crisis_help_page()
 
 def show_chat_page():
-    st.title("SAATHI: Mental Health Chat Bot")
-    st.write("Your Wellness Assistant")
+    st.title("SAATHI")
+    st.write("A SAARTHI For Your Mental Health.")
 
     # Initialize session_state
     if "chat_history" not in st.session_state:
-        db_messages = load_today_messages()
-        st.session_state.chat_history = db_messages
+        st.session_state.chat_history = []
     
     if "last_analysis" not in st.session_state:
         st.session_state.last_analysis = {}
     
     if "consultant_alert" not in st.session_state:
         st.session_state.consultant_alert = None
+        
+    if "selected_date_option" not in st.session_state:
+        st.session_state.selected_date_option = "Today"
 
     # Display consultant alert if exists
     if st.session_state.consultant_alert:
@@ -336,7 +363,7 @@ def show_chat_page():
 
     with chat_container:
         if not st.session_state.chat_history:
-            st.info("Start the chat by typing a message below.")
+            st.info("Select a date from the sidebar to view chat history, or start a new conversation below.")
         
         for message in st.session_state.chat_history:
             role_icon = "user" if message["role"] == "User" else "assistant"
@@ -350,18 +377,18 @@ def show_chat_page():
     # -----------------------------------------------------------------
     # --- Sidebar Display ---
     # -----------------------------------------------------------------
-    st.sidebar.header("Sentiment Analysis Data")
+    st.sidebar.header("Chat History & Analysis")
     
     # Database info
     total_messages = len(st.session_state.chat_history)
-    st.sidebar.info(f"Today's messages: {total_messages}")
+    st.sidebar.info(f"Messages in view: {total_messages}")
     
     # Clear chat button in sidebar
     if st.sidebar.button("🗑️ Clear Today's Chat", use_container_width=True):
         clear_chat_callback()
     
     # --- Date Selection for Chat History ---
-    st.sidebar.markdown("### 📅 View Chats by Date")
+    st.sidebar.markdown("### 📅 Load Chat History by Date")
     
     # Get available dates
     available_dates = get_available_dates()
@@ -373,32 +400,40 @@ def show_chat_page():
         selected_date_option = st.sidebar.selectbox(
             "Select date to view chats:",
             options=date_options,
-            index=0  # Default to Today
+            index=0,  # Default to Today
+            key="date_selector"
         )
         
-        # Determine which messages to display
-        if selected_date_option == "Today":
-            display_messages = st.session_state.chat_history
-            selected_date_display = "Today"
-        else:
-            # Extract date from the selected option
-            selected_date_str = selected_date_option.split(" ")[0]
-            selected_date = datetime.strptime(selected_date_str, "%Y-%m-%d")
-            display_messages = load_messages_by_date(selected_date)
-            selected_date_display = selected_date.strftime("%B %d, %Y")
-        
-        # Display selected date info
-        st.sidebar.caption(f"Showing: **{selected_date_display}**")
-        st.sidebar.caption(f"Messages: **{len(display_messages)}**")
+        # Load messages when date is selected
+        if st.session_state.selected_date_option != selected_date_option or not st.session_state.chat_history:
+            st.session_state.selected_date_option = selected_date_option
+            
+            if selected_date_option == "Today":
+                display_messages = load_today_messages()
+                selected_date_display = "Today"
+            else:
+                # Extract date from the selected option
+                selected_date_str = selected_date_option.split(" ")[0]
+                selected_date = datetime.strptime(selected_date_str, "%Y-%m-%d")
+                display_messages = load_messages_by_date(selected_date)
+                selected_date_display = selected_date.strftime("%B %d, %Y")
+            
+            # Update chat history display
+            st.session_state.chat_history = display_messages
+            
+            # Display selected date info
+            st.sidebar.caption(f"Showing: **{selected_date_display}**")
+            st.sidebar.caption(f"Messages: **{len(display_messages)}**")
         
     else:
-        display_messages = st.session_state.chat_history
+        st.session_state.chat_history = []
         selected_date_display = "Today"
-        st.sidebar.info("No previous chats found. Only today's chats available.")
+        st.sidebar.info("No previous chats found. Start a new conversation!")
     
-    # Recent Messages
-    st.sidebar.markdown("### 💬 Recent Messages")
+    # Recent Messages Preview
+    st.sidebar.markdown("### 💬 Recent Messages Preview")
     
+    display_messages = st.session_state.chat_history
     if display_messages:
         sidebar_history_text = []
         for msg in display_messages[-5:]: 
@@ -440,7 +475,7 @@ def show_chat_page():
                 align-items: center;
                 justify-content: center;
             ">
-                No messages found for {selected_date_display}
+                No messages found for selected date
             </div>
             """,
             unsafe_allow_html=True
@@ -471,23 +506,24 @@ def show_chat_page():
         st.sidebar.metric("Positive Score", f"{analysis['pos_score']:.2f}")
         st.sidebar.metric("Negative Score", f"{analysis['neg_score']:.2f}")
     else:
-        st.sidebar.info("Analysis will appear after the first message.")
+        st.sidebar.info("Analysis will appear after your first message.")
 
     # -----------------------------------------------------------------
     # --- Input Box using st.form ---
     # -----------------------------------------------------------------
+    st.markdown("### 💬 Start a New Conversation")
     with st.form(key='input_form'):
         st.text_input(
-            label="Start Chat! (Press Enter or Analyze)",
+            label="Type your message here...",
             max_chars=500,
             key="chat_input_key",
-            placeholder="Type your message here...",
+            placeholder="Share how you're feeling today...",
             label_visibility="collapsed"
         )
         
         submit_col, clear_col = st.columns([3, 1])
         with submit_col:
-            st.form_submit_button(
+            submit_button = st.form_submit_button(
                 label='💬 Send Message',
                 on_click=process_and_clear,
                 use_container_width=True
@@ -500,6 +536,9 @@ def show_chat_page():
                 type="secondary"
             ):
                 pass
+                
+        if submit_button and st.session_state.get('selected_date_option', 'Today') != 'Today':
+            st.info("💡 **Tip:** Your message has been saved. Switch to 'Today' view in the sidebar to see your current conversation.")
 
 def show_crisis_help_page():
     st.title("🚨 Crisis Help & Resources")
@@ -516,27 +555,28 @@ def show_crisis_help_page():
         st.subheader("Emergency Contacts")
         st.write("""
         **National Suicide Prevention Lifeline**  
-        📞 1-800-273-8255  
+        📞 1800-599-0019  
         🌐 suicidepreventionlifeline.org
         
         **Crisis Text Line**  
-        💬 Text HOME to 741741  
+        💬 1800-120-820050 [Mpower 1on1 Chat (via their website/WhatsApp)]
         
         **Emergency Services**  
-        🚑 Dial 911
+        🚑 Dial 112 (Police, Ambulance, Fire) or 
+            Dial 108 (Ambulance)
         """)
     
     with col2:
         st.subheader("Online Resources")
         st.write("""
-        **Mental Health America**  
-        🌐 mhanational.org
+        **Mental Health India**  
+        🌐 Kiran Helpline
         
         **National Alliance on Mental Illness**  
-        🌐 nami.org
+        🌐 AASRA Suicide Prevention
         
         **Crisis Chat**  
-        🌐 crisischat.org
+        🌐 Samaritans Mumbai 
         """)
     
     st.info("""
