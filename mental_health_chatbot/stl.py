@@ -8,10 +8,6 @@ from deep_translator import GoogleTranslator
 from langdetect import detect
 import consultants  # Import the consultants module
 
-
-
-
-
 # Database functions (from previous implementation)
 DB_NAME = 'saathi_chat_history.db'
 
@@ -154,7 +150,22 @@ def process_and_clear():
     # 1. Get the input value *before* clearing
     
     user_input_original = st.session_state.chat_input_key 
-    gemini_input = user_input_original
+    
+    # Get selected language from session state
+    selected_language = st.session_state.get('selected_language', 'English')
+    
+    # Debug: Print the selected language and original input
+    print(f"Selected Language: {selected_language}")
+    print(f"Original Input: {user_input_original}")
+    
+    # Modify gemini_input based on selected language
+    if selected_language != 'English':
+        gemini_input = f"generate results in {selected_language}: {user_input_original}"
+    else:
+        gemini_input = user_input_original
+
+    # Debug: Print the modified gemini input
+    print(f"Modified Gemini Input: {gemini_input}")
 
     #Translating and checking if user entererd english or not.
     try:
@@ -339,6 +350,10 @@ def show_chat_page():
         
     if "selected_date_option" not in st.session_state:
         st.session_state.selected_date_option = "Today"
+        
+    # Initialize language selection in session state
+    if "selected_language" not in st.session_state:
+        st.session_state.selected_language = "English"
 
     # Display consultant alert if exists
     if st.session_state.consultant_alert:
@@ -373,6 +388,62 @@ def show_chat_page():
                 st.markdown(message["content"])
     
     st.markdown("---")
+
+    # -----------------------------------------------------------------
+    # --- Language Selection (MOVED BEFORE THE FORM) ---
+    # -----------------------------------------------------------------
+    st.markdown("### 💬 Start a New Conversation")
+    
+    # Language selection box - MOVED OUTSIDE THE FORM
+    col1, col2 = st.columns([3, 1])
+    with col2:
+        # Indian languages including English
+        languages = [
+            "English", "Hindi", "Bengali", "Telugu", "Marathi", "Tamil", 
+            "Urdu", "Gujarati", "Kannada", "Odia", "Punjabi", "Malayalam"
+        ]
+        selected_language = st.selectbox(
+            "🌐 Response Language",
+            options=languages,
+            index=0,  # Default to English
+            key="language_selector"
+        )
+        # Store selected language in session state
+        st.session_state.selected_language = selected_language
+    
+    with col1:
+        st.caption(f"Responses will be generated in: **{selected_language}**")
+
+    # -----------------------------------------------------------------
+    # --- Input Box using st.form ---
+    # -----------------------------------------------------------------
+    with st.form(key='input_form'):
+        st.text_input(
+            label="Type your message here...",
+            max_chars=500,
+            key="chat_input_key",
+            placeholder="Share how you're feeling today...",
+            label_visibility="collapsed"
+        )
+        
+        submit_col, clear_col = st.columns([3, 1])
+        with submit_col:
+            submit_button = st.form_submit_button(
+                label='💬 Send Message',
+                on_click=process_and_clear,
+                use_container_width=True
+            )
+        with clear_col:
+            if st.form_submit_button(
+                label='🗑️ Clear',
+                on_click=clear_chat_callback,
+                use_container_width=True,
+                type="secondary"
+            ):
+                pass
+                
+        if submit_button and st.session_state.get('selected_date_option', 'Today') != 'Today':
+            st.info("💡 **Tip:** Your message has been saved. Switch to 'Today' view in the sidebar to see your current conversation.")
 
     # -----------------------------------------------------------------
     # --- Sidebar Display ---
@@ -507,38 +578,6 @@ def show_chat_page():
         st.sidebar.metric("Negative Score", f"{analysis['neg_score']:.2f}")
     else:
         st.sidebar.info("Analysis will appear after your first message.")
-
-    # -----------------------------------------------------------------
-    # --- Input Box using st.form ---
-    # -----------------------------------------------------------------
-    st.markdown("### 💬 Start a New Conversation")
-    with st.form(key='input_form'):
-        st.text_input(
-            label="Type your message here...",
-            max_chars=500,
-            key="chat_input_key",
-            placeholder="Share how you're feeling today...",
-            label_visibility="collapsed"
-        )
-        
-        submit_col, clear_col = st.columns([3, 1])
-        with submit_col:
-            submit_button = st.form_submit_button(
-                label='💬 Send Message',
-                on_click=process_and_clear,
-                use_container_width=True
-            )
-        with clear_col:
-            if st.form_submit_button(
-                label='🗑️ Clear',
-                on_click=clear_chat_callback,
-                use_container_width=True,
-                type="secondary"
-            ):
-                pass
-                
-        if submit_button and st.session_state.get('selected_date_option', 'Today') != 'Today':
-            st.info("💡 **Tip:** Your message has been saved. Switch to 'Today' view in the sidebar to see your current conversation.")
 
 def show_crisis_help_page():
     st.title("🚨 Crisis Help & Resources")
