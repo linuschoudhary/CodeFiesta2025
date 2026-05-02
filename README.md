@@ -2,7 +2,7 @@
 Code Fiesta 4.0 (GIT Jaipur 2025)
 
 # **Saathi ChatBot**
-Saathi is an intelligent conversational chatbot designed to provide emotional support, sentiment understanding, and crisis detection.  It integrates natural language processing, multilingual capabilities, and a database-backed chat history system to deliver meaningful interactions.
+Saathi is an intelligent conversational chatbot designed to provide emotional support, sentiment understanding, and crisis detection.<br>It integrates natural language processing, multilingual capabilities, and a database-backed chat history system to deliver meaningful interactions.
 
 # **Features**
 **Conversational AI** – Handles user queries and engages in natural dialogue<br>
