@@ -1,4 +1,4 @@
-## CodeFiesta2025
+# CodeFiesta2025
 This project was built during CodeFiesta 4.0, held at Global Institute of Technology (GIT), Jaipur in 2025.<br>
 Saathi Chatbot was developed from scratch **within just 24 hours** as part of the hackathon challenge. The team started **without any prior work, codebase, or preparation related to this project**.<br>
 Despite the limited time, we successfully designed and implemented key features such as **sentiment analysis, crisis detection, multilingual support, and database-backed chat history**.<br>
